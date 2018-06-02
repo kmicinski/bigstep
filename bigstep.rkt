@@ -114,7 +114,7 @@
      ; Turn it into a closure..
      (cons sigma (clo e env))]
 
-    ; What to do when you see two terms applied to one another...?
+    ; What to do when you see an application?
     [`(,e1 ,e2)
      (match-let* ([(cons sigma1 (clo `(lambda (,x) ,e) env1)) (eval sigma env e1)]
                   [(cons sigma2 arg) (eval sigma1 env e2)]
