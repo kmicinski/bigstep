@@ -135,8 +135,6 @@
     ; Note that I use `cdr` here to throw away the ending heap
     (check-equal? (cdr (inject-eval 42)) 42))
   (test-case "eval-lam"
-    ; Note that I use `cdr` here to throw away the ending heap
     (check-equal? (cdr (inject-eval `(lambda (x) x))) (clo '(lambda (x) x) (hash))))
   (test-case "eval-apply"
-    ; Note that I use `cdr` here to throw away the ending heap
     (check-equal? (cdr (inject-eval `((lambda (x) x) 2))) 2))))
