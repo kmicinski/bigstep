@@ -84,6 +84,10 @@
 (define heap-set hash-set)
 (define heap-ref hash-ref)
 
+; A hash that maps symbols of builtins into the functions that
+; implement them.
+(define builtins (hash '+ + '- - '* * '/ /))
+
 ; 
 ; The evaluation function
 ; 
@@ -114,6 +118,25 @@
      ; Turn it into a closure..
      (cons sigma (clo e env))]
 
+    ; Handle builtins
+    [`(,(? (lambda (op) (hash-has-key? builtins op)) op) . ,args)
+     (match-let* ([(cons sigma-last vs)
+                   ; acc will be a pair of a state and a list of values
+                   (foldl (lambda (enext acc)
+                            (match-let* ([(cons sigma-next v-next)
+                                          (eval (car acc) env enext)])
+                              (cons sigma-next (cons v-next (cdr acc)))))
+                          ; Initial value is sigma + empty list
+                          (cons sigma '())
+                          ; Fold over each of the arguments
+                          args)])
+
+       ; Now vs is a list of values. Assume it's a list of numbers
+       ; Apply the operator to the list of values. Use `op-to-builtin`
+       ; as a helper that turns the symbol for the operator into a
+       ; function that we can apply.
+       (cons sigma-last (apply (hash-ref builtins op) vs)))]
+    
     ; What to do when you see an application?
     [`(,e1 ,e2)
      (match-let* ([(cons sigma1 (clo `(lambda (,x) ,e) env1)) (eval sigma env e1)]
@@ -137,4 +160,8 @@
   (test-case "eval-lam"
     (check-equal? (cdr (inject-eval `(lambda (x) x))) (clo '(lambda (x) x) (hash))))
   (test-case "eval-apply"
-    (check-equal? (cdr (inject-eval `((lambda (x) x) 2))) 2))))
+    (check-equal? (cdr (inject-eval `((lambda (x) x) 2))) 2))
+  (test-case "eval-builtin-simple"
+    (check-equal? (cdr (inject-eval `(+ 1 2 3))) 6))
+  (test-case "eval-builtin-multi"
+    (check-equal? (cdr (inject-eval `(+ (* 3 4) 2 3))) 17))))
